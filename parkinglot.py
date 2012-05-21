@@ -35,7 +35,7 @@ parser.add_argument('--bw', '-b',
                     help="Bandwidth of network links",
                     required=True)
 
-parser.add_argument('--dir', '-d',
+parser.add_argument('--dir',
                     help="Directory to store outputs",
                     default="results")
 
@@ -95,7 +95,7 @@ class ParkingLotTopo(Topo):
         server = self.add_host('server', **hconfig)
         client = self.add_host('client', **hconfig)
         
-        self.add_link(server, 0, client, 0, **lconfig)
+        self.add_link(server, client, 0, 0, **lconfig)
         
 
         # # Create the actual topology
