@@ -35,7 +35,7 @@ parser.add_argument('--bw', '-b',
                     help="Bandwidth of network links",
                     required=True)
 
-parser.add_argument('--dir', '-d',
+parser.add_argument('--dir',
                     help="Directory to store outputs",
                     default="results")
 
@@ -91,29 +91,35 @@ class ParkingLotTopo(Topo):
         hconfig = {'cpu': cpu}
         lconfig = {'bw': bw, 'delay': delay,
                    'max_queue_size': max_queue_size }
+                   
+        server = self.add_host('server', **hconfig)
+        client = self.add_host('client', **hconfig)
+        
+        self.add_link(server, client, 0, 0, **lconfig)
+        
 
-        # Create the actual topology
-        receiver = self.add_host('receiver')
-
-        # Switch ports 1:uplink 2:hostlink 3:downlink
-        uplink, hostlink, downlink = 1, 2, 3
-
-        prev_node = receiver # The node for the next switch's uplink to connect to
-        upstream_port = 0 # The port for the next switch's uplink to connect to
-        for i in range(1, n + 1):
-            # Add the switch and host
-            si = self.add_switch('s' + str(i))
-            hi = self.add_host('h' + str(i), **hconfig)
-
-            # Connect the upstream side
-            self.add_link(prev_node, si, port1=upstream_port, port2=uplink, **lconfig)
-
-            # Connect the host
-            self.add_link(hi, si, port1=0, port2=hostlink, **lconfig)
-
-            # The next switch will connect to this switch
-            prev_node = si
-            upstream_port = downlink
+        # # Create the actual topology
+        # receiver = self.add_host('receiver')
+        # 
+        # # Switch ports 1:uplink 2:hostlink 3:downlink
+        # uplink, hostlink, downlink = 1, 2, 3
+        # 
+        # prev_node = receiver # The node for the next switch's uplink to connect to
+        # upstream_port = 0 # The port for the next switch's uplink to connect to
+        # for i in range(1, n + 1):
+        #     # Add the switch and host
+        #     si = self.add_switch('s' + str(i))
+        #     hi = self.add_host('h' + str(i), **hconfig)
+        # 
+        #     # Connect the upstream side
+        #     self.add_link(prev_node, si, port1=upstream_port, port2=uplink, **lconfig)
+        # 
+        #     # Connect the host
+        #     self.add_link(hi, si, port1=0, port2=hostlink, **lconfig)
+        # 
+        #     # The next switch will connect to this switch
+        #     prev_node = si
+        #     upstream_port = downlink
 
 def waitListening(client, server, port):
     "Wait until server is listening on port"
