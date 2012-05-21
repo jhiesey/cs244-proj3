@@ -39,13 +39,13 @@ parser.add_argument('--dir',
                     help="Directory to store outputs",
                     default="results")
 
-parser.add_argument('-n',
-                    type=int,
-                    help=("Number of senders in the parking lot topo."
-                    "Must be >= 1"),
-                    required=True)
+# parser.add_argument('-n',
+#                     type=int,
+#                     help=("Number of senders in the parking lot topo."
+#                     "Must be >= 1"),
+#                     required=True)
 
-parser.add_argument('--cli', '-c',
+parser.add_argument('--cli',
                     action='store_true',
                     help='Run CLI for topology debugging purposes')
 
@@ -54,12 +54,18 @@ parser.add_argument('--time', '-t',
                     type=int,
                     help="Duration of the experiment.",
                     default=60)
+                    
+parser.add_argument('--cwnd', '-c',
+                    dest="cwnd",
+                    type=int,
+                    help="Congestion window.",
+                    default=2)
 
-parser.add_argument('--delay', '-d',
-                    dest="delay",
-                    type=float,
-                    help="Latency on the link in ms",
-                    default=100)
+# parser.add_argument('--delay', '-d',
+#                     dest="delay",
+#                     type=float,
+#                     help="Latency on the link in ms",
+#                     default=100)
 
 # Expt parameters
 args = parser.parse_args()
@@ -73,7 +79,7 @@ lg.setLogLevel('info')
 class ParkingLotTopo(Topo):
     "Parking Lot Topology"
 
-    def __init__(self, n=1, cpu=.1, bw=10, delay=None,
+    def __init__(self, n=1, cpu=.1, bw=10, delay=100,
                  max_queue_size=None, **params):
         """Parking lot topology with one receiver
            and n clients.
@@ -89,7 +95,7 @@ class ParkingLotTopo(Topo):
 
         # Host and link configuration
         hconfig = {'cpu': cpu}
-        lconfig = {'bw': bw, 'delay': delay,
+        lconfig = {'bw': bw, 'delay': ('%sms' % delay),
                    'max_queue_size': max_queue_size }
                    
         server = self.add_host('server', **hconfig)
@@ -132,13 +138,13 @@ def waitListening(client, server, port):
                'to listen on port', port, '\n')
         sleep(.5)
 
-def progress(t):
-    while t > 0:
-        cprint('  %3d seconds left  \r' % (t), 'cyan', cr=False)
-        t -= 1
-        sys.stdout.flush()
-        sleep(1)
-    print
+# def progress(t):
+#     while t > 0:
+#         cprint('  %3d seconds left  \r' % (t), 'cyan', cr=False)
+#         t -= 1
+#         sys.stdout.flush()
+#         sleep(1)
+#     print
 
 def start_tcpprobe():
     os.system("rmmod tcp_probe &>/dev/null; modprobe tcp_probe;")
@@ -147,7 +153,7 @@ def start_tcpprobe():
 def stop_tcpprobe():
     os.system("killall -9 cat; rmmod tcp_probe &>/dev/null;")
 
-def run_parkinglot_expt(net, n):
+def run_parkinglot_expt(net, cwnd):
     "Run experiment"
 
     seconds = args.time
@@ -159,29 +165,39 @@ def run_parkinglot_expt(net, n):
     start_tcpprobe()
 
     # Get receiver and clients
-    recvr = net.getNodeByName('receiver')
-    sender1 = net.getNodeByName('h1')
+    server = net.getNodeByName('server')
+    client = net.getNodeByName('client')
+    
+    server.sendCmd('ip route')
+    origRoute = server.waitOutput()
+    print (origRoute)
+    
+    server.sendCmd('ip route replace %s initcwnd %d' % (origRoute.rstrip(), cwnd))
+    print (server.waitOutput())
 
     # Start the receiver
     port = 5001
-    recvr.cmd('iperf -s -p', port,
-              '> %s/iperf_server.txt' % args.dir, '&')
+    server.cmd('python -m SimpleHTTPServer %d &' % port)
 
-    waitListening(sender1, recvr, port)
+    sleep(1)
+    # waitListening(sender1, recvr, port)
+    
+    size = '30'
+    client.cmd('echoping -n 10 -h /testfiles/test%s %s:%d > %s/echoping.txt' % (size, server.IP(), port, args.dir))
 
     # Hint: Use sendCmd() and waitOutput() to start iperf and wait for them to finish
     # iperf command to start flow: 'iperf -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name)
     # Hint (not important): You may use progress(t) to track your experiment progress
-    for i in range(1,n+1):
-        node_name = 'h%d' % i
-        hi = net.getNodeByName(node_name)
-        hi.sendCmd('iperf -Z reno -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name))
-
-    for i in range(1,n+1):
-        hi = net.getNodeByName('h%d' % i)
-        hi.waitOutput()
-
-    recvr.cmd('kill %iperf')
+    # for i in range(1,n+1):
+    #     node_name = 'h%d' % i
+    #     hi = net.getNodeByName(node_name)
+    #     hi.sendCmd('iperf -Z reno -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name))
+    # 
+    # for i in range(1,n+1):
+    #     hi = net.getNodeByName('h%d' % i)
+    #     hi.waitOutput()
+    # 
+    # recvr.cmd('kill %iperf')
 
     # Shut down monitors
     monitor.terminate()
@@ -200,14 +216,17 @@ def main():
     "Create and run experiment"
     start = time()
 
-    topo = ParkingLotTopo(n=args.n, cpu=.15, bw=args.bw,
-                          max_queue_size=200, delay='%sms' % args.delay)
+    topo = ParkingLotTopo(1, cpu=.15, bw=args.bw,
+                          max_queue_size=200)
 
-    host = custom(CPULimitedHost, cpu=.15)  # 15% of system bandwidth
-    link = custom(TCLink, bw=args.bw, delay=args.delay,
-                  max_queue_size=200)
+    # host = custom(CPULimitedHost, cpu=.15)  # 15% of system bandwidth
+    # link = custom(TCLink, bw=args.bw,
+    #               max_queue_size=200)
+    link = custom(TCLink)
 
-    net = Mininet(topo=topo, host=host, link=link)
+    # net = Mininet(topo=topo, host=host, link=link)
+    
+    net = Mininet(topo=topo, link=link)
 
     net.start()
 
@@ -223,7 +242,7 @@ def main():
         CLI(net)
     else:
         cprint("*** Running experiment", "magenta")
-        run_parkinglot_expt(net, n=args.n)
+        run_parkinglot_expt(net, args.cwnd)
 
     net.stop()
     end = time()
