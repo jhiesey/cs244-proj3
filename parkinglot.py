@@ -55,6 +55,12 @@ parser.add_argument('--time', '-t',
                     help="Duration of the experiment.",
                     default=60)
 
+parser.add_argument('--delay', '-d',
+                    dest="delay",
+                    type=float,
+                    help="Latency on the link in ms",
+                    default=100)
+
 # Expt parameters
 args = parser.parse_args()
 
@@ -194,10 +200,11 @@ def main():
     "Create and run experiment"
     start = time()
 
-    topo = ParkingLotTopo(n=args.n)
+    topo = ParkingLotTopo(n=args.n, cpu=.15, bw=args.bw,
+                          max_queue_size=200, delay='%sms' % args.delay)
 
     host = custom(CPULimitedHost, cpu=.15)  # 15% of system bandwidth
-    link = custom(TCLink, bw=args.bw, delay='1ms',
+    link = custom(TCLink, bw=args.bw, delay=args.delay,
                   max_queue_size=200)
 
     net = Mininet(topo=topo, host=host, link=link)
