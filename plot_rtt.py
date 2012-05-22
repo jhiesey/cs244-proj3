@@ -1,24 +1,21 @@
 from util.helper import *
 from collections import defaultdict
+from math import sqrt
+import numpy as np
 import argparse
 import re
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-p', '--port', dest="port", default='5001')
+parser.add_argument('-b', '--baseline', dest='baseline_file',
+                    required=True, help="Specify the file with the \
+echoping results from the baseline run") 
 parser.add_argument('-f', dest="files", nargs='+', required=True)
 parser.add_argument('-o', '--out', dest="out", default=None)
-parser.add_argument('-H', '--histogram', dest="histogram",
-                    help="Plot histogram of sum(cwnd_i)",
-                    action="store_true",
-                    default=False)
+parser.add_argument('-n', dest="runs", type=int, help="Number of times \
+echoping was iterated to get the statistics for one run", required=True)
 
 args = parser.parse_args()
-
-def first(lst):
-    return map(lambda e: e[0], lst)
-
-def second(lst):
-    return map(lambda e: e[1], lst)
+num_files = len(args.files)
 
 """
 Sample relevant lines from a file:
@@ -30,15 +27,15 @@ Median time: 0.066370 seconds (3857 bytes per sec.)
 """
 def parse_file(f):
     regex_num = '\d+\.?\d*'
-    num_pattern = re.compile(regex_num)
+    pattern_num = re.compile(regex_num)
     minimum = maximum = avg = std = median = 0
     with open(f) as opened:
         for l in opened:
             parts = l.split(":")
             if len(parts) != 2:
                 continue
-            nums = num_pattern.findall(parts[1])
-            num = float(nums[0])
+            nums = pattern_num.findall(parts[1])
+            num = float(nums[0]) * 1000
             if parts[0] == 'Minimum time':
                 minimum = num
             elif parts[0] == 'Maximum time':
@@ -51,77 +48,55 @@ def parse_file(f):
                 median = num
     
     return minimum, maximum, avg, std, median
-'''
-added = defaultdict(int)
-events = []
-'''
-def plot_abs_improvement(ax):
-    global events
+
+def plot_improvement(ax_abs, ax_percent):
+    width = 0.35
+    abs_list = list()
+    percent_list = list()
+    labels = list()
+    x = 0
+
+    b_min, b_max, b_avg, b_std, b_median = parse_file(args.baseline_file)
     for f in args.files:
-        #times, cwnds = parse_file(f)
         minimum, maximum, avg, std, median = parse_file(f)
         print minimum, maximum, avg, std, median
-        '''
-        for port in sorted(cwnds.keys()):
-            t = times[port]
-            cwnd = cwnds[port]
-
-            events += zip(t, [port]*len(t), cwnd)
-            ax.plot(t, cwnd)
-            
-    events.sort()
-'''
-
-def plot_percent_improvement(ax):
-    pass
-
-total_cwnd = 0
-cwnd_time = []
-
-min_total_cwnd = 10**10
-max_total_cwnd = 0
-totalcwnds = []
+        
+        diff_std = sqrt((b_std**2 + std**2)/args.runs)
+        abs_list.append(b_avg - avg)
+        percent_list.append((b_avg - avg) / b_avg)
+        # TODO parse RTT, etc and place in label
+        labels.append('%s' % x)
+        x = x + 1
+        
+    ind = np.arange(num_files)
+    rects1 = ax_abs.bar(ind+width, abs_list, width, color='r') #, yerr=abs_err)
+    rects2 = ax_percent.bar(ind+2*width, percent_list, width, color='b')
+                            #, yerr=percent_err) 
+    ax_abs.set_xticks(ind+2*width)
+    ax_abs.set_xticklabels( tuple(labels) )
+    ax_abs.legend( (rects1[0], rects2[0]),
+                   ('Absolute Improvement','Percentage Improvement') )
 
 m.rc('figure', figsize=(16, 6))
 fig = plt.figure()
-plots = 1
-'''
-if args.histogram:
-    plots = 2
-'''
 
-ax1 = fig.add_subplot(1, plots, 1)
-plot_abs_improvement(ax1)
-'''
-for (t,p,c) in events:
-    if added[p]:
-        total_cwnd -= added[p]
-    total_cwnd += c
-    cwnd_time.append((t, total_cwnd))
-    added[p] = c
-    totalcwnds.append(total_cwnd)
+ax1 = fig.add_subplot(1, 1, 1)
 
-ax1.plot(first(cwnd_time), second(cwnd_time), lw=2, label="$\sum_i W_i$")
-ax1.legend()
 ax1.set_xlabel("RTT")
 ax1.set_ylabel("Improvement (ms)", color="r")
 ax1.set_yscale("log")
-#ax1.set_title("") #original has no title
+ax1.grid(True, which='major', linestyle='-')
+ax1.set_axisbelow(True)
+ax1.set_ylim(1, 10000)
 
 #http://matplotlib.sourceforge.net/examples/api/two_scales.html#api-two-scales
 ax2 = ax1.twinx()
-ax2.set_ylabel("Percentage Improvement",color="b')
+ax2.set_ylabel("Percentage Improvement",color="b")
 ax2.set_yscale("linear")
-# plot on ax2 using ax2.plot(t, data_improvement)
+ax2.set_ylim(0, 1)
 
-if args.histogram:
-    axHist = fig.add_subplot(1, 2, 2)
-    n, bins, patches = axHist.hist(totalcwnds, 50, normed=1, facecolor='green', alpha=0.75)
+plot_improvement(ax1, ax2)
 
-    axHist.set_xlabel("bins (KB)")
-    axHist.set_ylabel("Fraction")
-    axHist.set_title("Histogram of sum(cwnd_i)")
-'''
 if args.out:
     print 'saving to', args.out
     plt.savefig(args.out)
