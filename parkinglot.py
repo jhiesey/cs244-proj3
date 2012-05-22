@@ -172,18 +172,41 @@ def run_parkinglot_expt(net, cwnd):
     origRoute = server.waitOutput()
     print (origRoute)
     
-    server.sendCmd('ip route replace %s initcwnd %d' % (origRoute.rstrip(), cwnd))
-    print (server.waitOutput())
+    server.cmd('ip route replace %s initcwnd %d' % (origRoute.rstrip(), cwnd))
+    
+    # sleep(60)
+    
+    server.sendCmd('ip route')
+    print(server.waitOutput())
+    
+    server.cmd('sysctl -w net.ipv4.tcp_no_metrics_save=1')
+    server.cmd('sysctl -w net.ipv4.route.flush=1')
 
     # Start the receiver
     port = 5001
-    server.cmd('python -m SimpleHTTPServer %d &' % port)
+    command = 'python -m SimpleHTTPServer %d &' % port
+    print(command)
+    server.cmd(command)
+    
+    server.sendCmd('ifconfig')
+    print('server: %s' % server.waitOutput())
 
     sleep(1)
     # waitListening(sender1, recvr, port)
     
-    size = '30'
-    client.cmd('echoping -n 10 -h /testfiles/test%s %s:%d > %s/echoping.txt' % (size, server.IP(), port, args.dir))
+    size = 30
+    command = "curl -o TEST.OUT -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s/echoping.txt" % (server.IP(), port, size, args.dir)
+    for i in range(10):
+        print(command)
+        client.cmd(command)
+        sleep(1)
+        
+    # command = 'echoping -n 10 -h /testfiles/test%s %s:%d > %s/echoping.txt' % (size, server.IP(), port, args.dir)
+    # print(command)
+    # client.cmd(command)
+    
+    client.sendCmd('ifconfig')
+    print('client: %s' % client.waitOutput())
 
     # Hint: Use sendCmd() and waitOutput() to start iperf and wait for them to finish
     # iperf command to start flow: 'iperf -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name)
