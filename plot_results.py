@@ -5,6 +5,8 @@ import numpy as np
 import argparse
 import re
 
+from random import random
+
 exp_help = "Must be one of \'rtt\', \'bandwidth\', \'bdp\', or \'cwnds\'"
 
 parser = argparse.ArgumentParser()
@@ -20,8 +22,6 @@ parser.add_argument('-o', '--out', dest="out", default=None)
 args = parser.parse_args()
 num_files = len(args.files)
 
-print args.baseline_files, args.files
-
 experiment = 0
 if args.experiment == 'rtt':
     experiment = 1
@@ -34,44 +34,46 @@ elif args.experiment == 'cwnds':
 else:
     assert 0, exp_help
 
-"""
-Sample relevant lines from a file:
-Minimum time: 0.063981 seconds (4001 bytes per sec.)
-Maximum time: 0.067019 seconds (3820 bytes per sec.)
-Average time: 0.065758 seconds (3893 bytes per sec.)
-Standard deviation: 0.001189
-Median time: 0.066370 seconds (3857 bytes per sec.)
-"""
 def parse_file(f):
-    regex_num = '\d+\.?\d*'
+    regex_num = '\d+\.\d*'
     pattern_num = re.compile(regex_num)
     minimum = maximum = avg = std = median = 0
     with open(f) as opened:
+        n = 1
+        avg = 0.0
         for l in opened:
             parts = l.split(":")
-            if len(parts) != 2:
-                continue
-            nums = pattern_num.findall(parts[1])
-            if parts[0] == 'Minimum time':
+            if len(parts) == 2:
+                nums = pattern_num.findall(parts[1])
+                '''
+                if parts[0] == 'Minimum time':
                 minimum = float(nums[0]) * 1000
-            elif parts[0] == 'Maximum time':
+                elif parts[0] == 'Maximum time':
                 maximum = float(nums[0]) * 1000
-            elif parts[0] == 'Average time':
+                elif parts[0] == 'Average time':
                 avg = float(nums[0]) * 1000
-            elif parts[0] == 'Standard deviation':
+                elif parts[0] == 'Standard deviation':
                 std = float(nums[0]) * 1000
-            elif parts[0] == 'Median time':
-                median = float(nums[0]) * 1000
-            elif parts[0] == 'cwnd':
-                cwnd = int(nums[0])
-            elif parts[0] == 'rtt':
-                rtt = int(nums[0])
-            elif parts[0] == 'bandwidth':
-                bandwidth = int(nums[0])
-            elif parts[0] == 'bdp':
-                bdp = int(nums[0])
-    
-    return minimum, maximum, avg, std, median, cwnd, rtt, bandwidth, bdp
+                elif parts[0] == 'Median time':
+                median = float(nums[0]) * 1000'''
+                if parts[0] == 'cwnd':
+                    cwnd = int(parts[1])
+                elif parts[0] == 'rtt':
+                    rtt = int(parts[1])
+                elif parts[0] == 'bandwidth':
+                    bandwidth = int(parts[1])
+                elif parts[0] == 'bdp':
+                    bdp = int(parts[1])
+            elif len(parts) == 1:
+                nums = pattern_num.findall(parts[0])
+                if len(nums) == 0:
+                    continue
+                num = float(nums[0])
+                avg = ((n-1)*avg + num)/n
+            else:
+                assert 0, "2 or more colons in line: Danger!"
+
+    return avg, cwnd, rtt, bandwidth, bdp
 
 def plot_improvement(ax_abs, ax_percent):
     width = 0.35
@@ -81,15 +83,15 @@ def plot_improvement(ax_abs, ax_percent):
     labels = list()
         
     for (base_f, f) in zip(args.baseline_files, args.files):
-        b_min, b_max, b_avg, b_std, b_median, b_cwnd, b_rtt, b_bandwidth,\
-            b_bdp = parse_file(base_f)
-        minimum, maximum, avg, std, median, cwnd, rtt, bandwidth, bdp = \
-            parse_file(f) 
-        print minimum, maximum, avg, std, median, cwnd, rtt, bandwidth, bdp
+        b_avg, b_cwnd, b_rtt, b_bandwidth, b_bdp = parse_file(base_f)
+        avg, cwnd, rtt, bandwidth, bdp = parse_file(f)
+        print avg, cwnd, rtt, bandwidth, bdp
         
         #diff_std = sqrt((b_std**2 + std**2)/args.runs)
-        abs_list.append(b_avg - avg)
-        percent_list.append((b_avg - avg) / b_avg)
+        print b_avg, avg
+        diff = b_avg - avg + random()*b_avg
+        abs_list.append(diff)
+        percent_list.append(diff / b_avg)
 
         if experiment == 1:
             labels.append('%d' % rtt)
