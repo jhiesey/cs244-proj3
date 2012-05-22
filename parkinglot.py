@@ -249,7 +249,7 @@ def main():
     "Create and run experiment"
     start = time()
 
-    topo = ParkingLotTopo(1, cpu=.15, bw=args.bw, delay=args.rtt/2
+    topo = ParkingLotTopo(1, cpu=.15, bw=args.bw, delay=args.rtt/2,
                           max_queue_size=200)
 
     # host = custom(CPULimitedHost, cpu=.15)  # 15% of system bandwidth
