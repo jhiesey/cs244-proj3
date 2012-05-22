@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-"CS244 Assignment 1: Parking Lot"
+"CS244 Assignment 3: Initial Congestion Window"
 
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -29,11 +29,7 @@ def cprint(s, color, cr=True):
     else:
         print T.colored(s, color),
 
-parser = argparse.ArgumentParser(description="Parking lot tests")
-parser.add_argument('--bw', '-b',
-                    type=float,
-                    help="Bandwidth of network links",
-                    required=True)
+parser = argparse.ArgumentParser(description="Congestion window tests")
 
 parser.add_argument('--dir',
                     help="Directory to store outputs",
@@ -60,6 +56,14 @@ parser.add_argument('--cwnd', '-c',
                     type=int,
                     help="Congestion window.",
                     default=2)
+
+parser.add_argument('--rtt', '-r', dest="rtt", type=int,
+                    help="rtt b/w the hosts in ms", default=200)
+
+parser.add_argument('--bw', '-b',
+                    type=float,
+                    help="Bandwidth of network links",
+                    required=True)
 
 # parser.add_argument('--delay', '-d',
 #                     dest="delay",
@@ -194,6 +198,12 @@ def run_parkinglot_expt(net, cwnd):
     sleep(1)
     # waitListening(sender1, recvr, port)
     
+    # Have client print parameters into output
+    client.cmd("echo \"cwnd: %d\" >> %s/echoping.txt" % (args.cwnd, args.dir))
+    client.cmd("echo \"rtt: %d\" >> %s/echoping.txt" % (args.rtt, args.dir))
+    client.cmd("echo \"bandwidth: %d\" >> %s/echoping.txt" % (args.bw, args.dir))
+    client.cmd("echo \"bdp: %d\" >> %s/echoping.txt" % (args.bw * args.rtt, args.dir))
+
     size = 30
     command = "curl -o TEST.OUT -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s/echoping.txt" % (server.IP(), port, size, args.dir)
     for i in range(10):
@@ -239,7 +249,7 @@ def main():
     "Create and run experiment"
     start = time()
 
-    topo = ParkingLotTopo(1, cpu=.15, bw=args.bw,
+    topo = ParkingLotTopo(1, cpu=.15, bw=args.bw, delay=args.rtt/2,
                           max_queue_size=200)
 
     # host = custom(CPULimitedHost, cpu=.15)  # 15% of system bandwidth
