@@ -35,12 +35,6 @@ parser.add_argument('--dir',
                     help="Directory to store outputs",
                     default="results")
 
-# parser.add_argument('-n',
-#                     type=int,
-#                     help=("Number of senders in the parking lot topo."
-#                     "Must be >= 1"),
-#                     required=True)
-
 parser.add_argument('--cli',
                     action='store_true',
                     help='Run CLI for topology debugging purposes')
@@ -80,12 +74,12 @@ if not os.path.exists(args.dir):
 lg.setLogLevel('info')
 
 # Topology to be instantiated in Mininet
-class ParkingLotTopo(Topo):
-    "Parking Lot Topology"
+class InitCwndTopo(Topo):
+    "InitCwnd Topology"
 
     def __init__(self, n=1, cpu=.1, bw=10, delay=100,
                  max_queue_size=None, **params):
-        """Parking lot topology with one receiver
+        """InitCwnd topology with one receiver
            and n clients.
            n: number of clients
            cpu: system fraction for each host
@@ -107,30 +101,6 @@ class ParkingLotTopo(Topo):
         
         self.add_link(server, client, 0, 0, **lconfig)
         
-
-        # # Create the actual topology
-        # receiver = self.add_host('receiver')
-        # 
-        # # Switch ports 1:uplink 2:hostlink 3:downlink
-        # uplink, hostlink, downlink = 1, 2, 3
-        # 
-        # prev_node = receiver # The node for the next switch's uplink to connect to
-        # upstream_port = 0 # The port for the next switch's uplink to connect to
-        # for i in range(1, n + 1):
-        #     # Add the switch and host
-        #     si = self.add_switch('s' + str(i))
-        #     hi = self.add_host('h' + str(i), **hconfig)
-        # 
-        #     # Connect the upstream side
-        #     self.add_link(prev_node, si, port1=upstream_port, port2=uplink, **lconfig)
-        # 
-        #     # Connect the host
-        #     self.add_link(hi, si, port1=0, port2=hostlink, **lconfig)
-        # 
-        #     # The next switch will connect to this switch
-        #     prev_node = si
-        #     upstream_port = downlink
-
 def waitListening(client, server, port):
     "Wait until server is listening on port"
     if not 'telnet' in client.cmd('which telnet'):
@@ -157,7 +127,17 @@ def start_tcpprobe():
 def stop_tcpprobe():
     os.system("killall -9 cat; rmmod tcp_probe &>/dev/null;")
 
-def run_parkinglot_expt(net, cwnd):
+def get_ip_configs(net):
+    server = net.getNodeByName('server')
+    client = net.getNodeByName('client')
+
+    server.sendCmd('ip route')
+    client.sendCmd('ip route')
+    return "Server Config: %s\nClient Config: %s" %\
+        (server.waitOutput(), client.waitOutput())
+    
+
+def run_initcwnd_expt(net, cwnd):
     "Run experiment"
 
     seconds = args.time
@@ -172,16 +152,18 @@ def run_parkinglot_expt(net, cwnd):
     server = net.getNodeByName('server')
     client = net.getNodeByName('client')
     
+    # Save original ip route configs
     server.sendCmd('ip route')
-    origRoute = server.waitOutput()
-    print (origRoute)
+    origServerRoute = server.waitOutput()
+    client.sendCmd('ip route')
+    origClientRoute = client.waitOutput()
+    print (origServerRoute, origClientRoute)
     
-    server.cmd('ip route replace %s initcwnd %d' % (origRoute.rstrip(), cwnd))
+    server.cmd('ip route replace %s initcwnd %d' % (origServerRoute.rstrip(), cwnd))
+    server.cmd('ip route replace %s initrwnd %d' % (origClientRoute.rstrip(), 50))
     
     # sleep(60)
-    
-    server.sendCmd('ip route')
-    print(server.waitOutput())
+    print get_ip_configs(net)
     
     server.cmd('sysctl -w net.ipv4.tcp_no_metrics_save=1')
     server.cmd('sysctl -w net.ipv4.route.flush=1')
@@ -249,7 +231,7 @@ def main():
     "Create and run experiment"
     start = time()
 
-    topo = ParkingLotTopo(1, cpu=.15, bw=args.bw, delay=args.rtt/2,
+    topo = InitCwndTopo(1, cpu=.15, bw=args.bw, delay=args.rtt/2,
                           max_queue_size=200)
 
     # host = custom(CPULimitedHost, cpu=.15)  # 15% of system bandwidth
@@ -275,7 +257,7 @@ def main():
         CLI(net)
     else:
         cprint("*** Running experiment", "magenta")
-        run_parkinglot_expt(net, args.cwnd)
+        run_initcwnd_expt(net, args.cwnd)
 
     net.stop()
     end = time()

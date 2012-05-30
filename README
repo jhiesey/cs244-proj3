@@ -2,17 +2,20 @@ John Hiesey (jhiesey)
 Daniel Sommermann (dcsommer)
 
 Instructions to run the assignment:
-sudo ./parkinglot-sweep.sh
+sudo ./initcwnd-sweep.sh
 
-The graphs are in the default output folder (parkinglot-Apr13-22:31 for our run).  I removed the text output files to save space.
+A sample graph is included in this milestone tarball in result.png
 
-Answers to quiz questions:
-1) As the buffer fills, the RTT of the connection increases along with the cwnd.  In TCP Reno, when there is no loss the congestion window is increased by one maximum segment size every RTT, which is figured as MSS^2/cwnd for each ACK, so as the RTT (and congestion window) increases, the amount of additive increase per ACK is lower.  Since the ACKs come in at a constant rate, the cwnd will increase more slowly over time.
+By way of a status update:
 
-2) If we were to assume that the cwnd's were independent, as was done in the buffer sizing paper we read for large numbers of flows, we would expect the variance to decrease (as per the central limit theorem).  However, since we only have a small number of flows, the flows may be synchronized (as seems to happen with five flows), causing the variance to be relatively unchanged. This happens because the sum of the cwnd's, and hence the total sawtooth drop they experience when synchronized, will be the same size.  This is what we observed in the simulation.
+This code was copied from proj2, so some of the filenames are off.
+However, we have constructed the basic topology, can measure the time
+it takes to download a file (using curl), and also can do an end to
+end run (using initcwnd-sweep.sh) to generate a plot. The plotting
+code is finished.
 
-3) In our opinion, the incoming bandwidth to the receiver should be used equally between all the sending hosts. This should occur since only the one link to the receiver will be a bottleneck, causing all packets to be dropped in switch s1.  This should make all flows get an equal share.
+The main issue right now is reliably changing the cwnd and having that
+show up in our results. We know theoretically how to do this, but we
+aren't convinced the commands we run are having an effect.
 
-From our plots, it seems as though this is the case with TCP. If the streams were over UDP, we would expect that a disproportionate amount of the traffic to the receiver would be composed of the hosts closer to the receiver. The reasoning behind this is that the traffic from hosts farther away would have a higher chance of being dropped since every host would send as much data as possible.  In particular, each link would be a bottleneck, so each switch would get half of its traffic from each port, causing the h1 to get half of the bandwidth, h2 to get one quarter, etc.
-
-4) If a host started a second flow, the data transmitted from that host would double as compared to the other hosts. This is because each flow (regardless of from what host) gets roughly an equal proportion of the bottleneck link in front of the receiver.  If a host started a second flow, but everything was over UDP, the net egress would not change from that host that started the second flow, since presumably that host is already transmitting at the maximum capacity of the local link.
+The blog post with the introduction is in cs244-init_cwnd.txt
