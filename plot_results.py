@@ -70,6 +70,7 @@ def parse_file(f):
                     continue
                 num = float(nums[0])
                 avg = ((n-1)*avg + num)/n
+                n = n + 1
             else:
                 assert 0, "2 or more colons in line: Danger!"
 
@@ -89,7 +90,7 @@ def plot_improvement(ax_abs, ax_percent):
         
         #diff_std = sqrt((b_std**2 + std**2)/args.runs)
         print b_avg, avg
-        diff = b_avg - avg + random()*b_avg
+        diff = b_avg - avg
         abs_list.append(diff)
         percent_list.append(diff / b_avg)
 
