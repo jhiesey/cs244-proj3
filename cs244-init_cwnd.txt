@@ -8,7 +8,11 @@ Introduction
     Second, we will attempt to evaluate the potential negative impact of larger init_cwnd.  The Dukkipati et.al. paper[1] discusses the potential for larger initial congestion windows to cause more frequent packet loss due to buffers overflowing.  Unfortunately, the authors of that paper only attempted to measure this effect using a small amount of data.  We attempt to quantify this effect in MiniNet by opening many TCP connections over a bottleneck link and evaluating the goodput of this network for various init_cwnd sizes.
     
 Experimental Setup
-To replicate the main results of [1], only a very simple topology is needed. This topology is simply a single link between two nodes: a host and a server. We vary the RTT by setting the delay on the link. For the two congenstion window values of 3 (the baseline) and 10, we compare the latency of transferring a 30 kB (30 thousand bytes) file with various RTTs. We use mininet to create this topology and use curl to have the host initiate a file transfer from the host. We measure the latency as reported by curl.
+For all of our experiments we use the general topology shown below implemented in mininet. The only link with realistic parameters is the bottleneck link between the two switches in the center. The links connecting hosts to the two center switches are modeled with infinite bandwidth and zero latency. Each host on the left communicates with exactly one server on the right. The clients on the left run a curl command to download a 30 kB (30 thousand byte) file from their respective servers. We measure the latency as reported by curl.
+
+\image{topology.png}
+
+To replicate the main results of [1], we use only one client/server pair and set the delay of the bottleneck link to various values to change the end-to-end RTT, our independent variable. For each RTT we compare the latency of transferring the 30 kB file for the two initial congestion window sizes (4, the default and 10, the proposed new value).
 
 For our second experiment, we simply set the loss rate of the link to 5% and otherwise perform the same experiment as in the first part.
 [Describe the use of MiniNet]
