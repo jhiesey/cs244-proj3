@@ -15,6 +15,8 @@ from multiprocessing import Process
 from subprocess import Popen
 import termcolor as T
 import argparse
+import threading
+import random
 
 import sys
 import os
@@ -58,6 +60,24 @@ parser.add_argument('--bw', '-b',
                     type=float,
                     help="Bandwidth of network links",
                     required=True)
+                    
+parser.add_argument('--numtests',
+                    dest='numtests',
+                    type=int,
+                    help="Number of tests",
+                    default=10)
+ 
+parser.add_argument('--hosts',
+                    dest='hosts',
+                    type=int,
+                    help="Number of hosts",
+                    default=1)
+                
+parser.add_argument('--lambda', '-l',
+                    dest='lambd',
+                    type=float,
+                    help="Poisson parameter",
+                    default=None)
 
 # parser.add_argument('--delay', '-d',
 #                     dest="delay",
@@ -94,12 +114,19 @@ class InitCwndTopo(Topo):
         # Host and link configuration
         hconfig = {'cpu': cpu}
         lconfig = {'bw': bw, 'delay': ('%sms' % delay),
-                   'max_queue_size': max_queue_size }
+                   'max_queue_size': max_queue_size} # , 'loss': 10
                    
-        server = self.add_host('server', **hconfig)
-        client = self.add_host('client', **hconfig)
+        serverSwitch = self.add_switch('s1')
+        clientSwitch = self.add_switch('s2')
         
-        self.add_link(server, client, 0, 0, **lconfig)
+        self.add_link(serverSwitch, clientSwitch, 0, 0, **lconfig)
+        
+        for i in range(1, args.hosts + 1):
+            server = self.add_host('server' + str(i), **hconfig)
+            client = self.add_host('client' + str(i), **hconfig)
+        
+            self.add_link(server, serverSwitch, 0, i)
+            self.add_link(client, clientSwitch, 0, i)
         
 def waitListening(client, server, port):
     "Wait until server is listening on port"
@@ -128,8 +155,8 @@ def stop_tcpprobe():
     os.system("killall -9 cat; rmmod tcp_probe > /dev/null;")
 
 def get_ip_configs(net):
-    server = net.getNodeByName('server')
-    client = net.getNodeByName('client')
+    server = net.getNodeByName('server1')
+    client = net.getNodeByName('client1')
 
     server.sendCmd('ip route')
     client.sendCmd('ip route')
@@ -148,57 +175,89 @@ def run_initcwnd_expt(net, cwnd):
     monitor.start()
     start_tcpprobe()
 
-    # Get receiver and clients
-    server = net.getNodeByName('server')
-    client = net.getNodeByName('client')
+    # Set up servers
+    for i in range(1, args.hosts + 1):
+        # Get receiver and clients
+        server = net.getNodeByName('server' + str(i))
+        client = net.getNodeByName('client' + str(i))
     
-    # Save original ip route configs
-    server.sendCmd('ip route')
-    origServerRoute = server.waitOutput()
-    client.sendCmd('ip route')
-    origClientRoute = client.waitOutput()
-    print (origServerRoute, origClientRoute)
+        # Save original ip route configs
+        server.sendCmd('ip route')
+        origServerRoute = server.waitOutput()
+        client.sendCmd('ip route')
+        origClientRoute = client.waitOutput()
+        print (origServerRoute, origClientRoute)
     
-    server.cmd('ip route replace %s initcwnd %d' % (origServerRoute.rstrip(), cwnd))
-    server.cmd('ip route replace %s initrwnd %d' % (origClientRoute.rstrip(), 50))
+        server.cmd('ip route replace %s initcwnd %d' % (origServerRoute.rstrip(), cwnd))
+        server.cmd('ip route replace %s initrwnd %d' % (origClientRoute.rstrip(), 50))
     
-    # sleep(60)
-    print get_ip_configs(net)
+        # sleep(60)
+        print get_ip_configs(net)
     
-    server.cmd('sysctl -w net.ipv4.tcp_no_metrics_save=1')
-    server.cmd('sysctl -w net.ipv4.route.flush=1')
-
-    # Start the receiver
-    port = 5001
-    command = 'python -m SimpleHTTPServer %d &' % port
-    print(command)
-    server.cmd(command)
+        server.cmd('sysctl -w net.ipv4.tcp_no_metrics_save=1')
+        server.cmd('sysctl -w net.ipv4.route.flush=1')
     
-    server.sendCmd('ifconfig')
-    print('server: %s' % server.waitOutput())
-
+        # Start the receiver
+        port = 5001
+        command = 'python -m SimpleHTTPServer %d &' % port
+        print(command)
+        server.cmd(command)
+    
+        server.sendCmd('ifconfig')
+        print('server: %s' % server.waitOutput())
+        
     sleep(1)
     # waitListening(sender1, recvr, port)
     
-    # Have client print parameters into output
-    client.cmd("echo \"cwnd: %d\" >> %s/echoping.txt" % (args.cwnd, args.dir))
-    client.cmd("echo \"rtt: %d\" >> %s/echoping.txt" % (args.rtt, args.dir))
-    client.cmd("echo \"bandwidth: %d\" >> %s/echoping.txt" % (args.bw, args.dir))
-    client.cmd("echo \"bdp: %d\" >> %s/echoping.txt" % (args.bw * args.rtt, args.dir))
+    # def doClient():
+    #     # Get receiver and clients
+    #     server = net.getNodeByName('server' + str(1))
+    #     client = net.getNodeByName('client' + str(1))
+    # 
+    # 
+    # 
+    #     size = 30
+    #     command = "curl -o TEST.OUT -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s/%s" % (server.IP(), port, size, args.dir, latencyFile)
+    #     for j in range(args.numtests):
+    #         print(command)
+    #         if args.lambd is not None:
+    #             stopTime = time.time() + random.expovariate(args.lambd)
+    #             client.cmd(command)
+    #             waitTime = stopTime - time.time()
+    #             if waitTime > 0:
+    #                 sleep(waitTime)
+    #         else:
+    #             client.cmd(command)                
+    
+    clients = []    
+    for i in range(1, args.hosts + 1):
+        client = net.getNodeByName('client' + str(i))
+        client = net.getNodeByName('client' + str(i))
+        latencyFile = "latency-%d.txt" % i
 
-    size = 30
-    command = "curl -o TEST.OUT -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s/echoping.txt" % (server.IP(), port, size, args.dir)
-    for i in range(10):
-        print(command)
-        client.cmd(command)
-        sleep(1)
+        # Have client print parameters into output
+        client.cmd("echo \"cwnd: %d\" >> %s/%s" % (args.cwnd, args.dir, latencyFile))
+        client.cmd("echo \"rtt: %d\" >> %s/%s" % (args.rtt, args.dir, latencyFile))
+        client.cmd("echo \"bandwidth: %d\" >> %s/%s" % (args.bw, args.dir, latencyFile))
+        client.cmd("echo \"bdp: %d\" >> %s/%s" % (args.bw * args.rtt, args.dir, latencyFile))
+        
+        client.sendCmd('python client-operation.py --dir %s --server %s --hnum %d --lambda %f --numtests %d' % (args.dir, server.IP(), i, args.lambd, args.numtests))
+        clients.append(client)
+        
+        # thread = threading.Thread(target=doClient)
+        # thread.daemon =  True
+        # clientThreads.append(thread)
+        # thread.start()
+
+    for client in clients:
+        print(client.waitOutput())
         
     # command = 'echoping -n 10 -h /testfiles/test%s %s:%d > %s/echoping.txt' % (size, server.IP(), port, args.dir)
     # print(command)
     # client.cmd(command)
     
-    client.sendCmd('ifconfig')
-    print('client: %s' % client.waitOutput())
+    # client.sendCmd('ifconfig')
+    # print('client: %s' % client.waitOutput())
 
     # Hint: Use sendCmd() and waitOutput() to start iperf and wait for them to finish
     # iperf command to start flow: 'iperf -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name)
