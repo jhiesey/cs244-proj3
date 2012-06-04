@@ -74,7 +74,7 @@ def parse_file(f):
             else:
                 assert 0, "2 or more colons in line: Danger!"
 
-    return avg, cwnd, rtt, bandwidth, bdp
+    return avg*1000, cwnd, rtt, bandwidth, bdp
 
 def plot_improvement(ax_abs, ax_percent):
     width = 0.35
@@ -86,13 +86,15 @@ def plot_improvement(ax_abs, ax_percent):
     for (base_f, f) in zip(args.baseline_files, args.files):
         b_avg, b_cwnd, b_rtt, b_bandwidth, b_bdp = parse_file(base_f)
         avg, cwnd, rtt, bandwidth, bdp = parse_file(f)
-        print avg, cwnd, rtt, bandwidth, bdp
         
         #diff_std = sqrt((b_std**2 + std**2)/args.runs)
-        print b_avg, avg
         diff = b_avg - avg
+        pcnt = diff / avg
+
+        print rtt, bandwidth, bdp, "  Results:", diff, pcnt
+
         abs_list.append(diff)
-        percent_list.append(diff / b_avg)
+        percent_list.append(pcnt)
 
         if experiment == 1:
             labels.append('%d' % rtt)
