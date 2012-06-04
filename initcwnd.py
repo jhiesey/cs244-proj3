@@ -121,11 +121,11 @@ def waitListening(client, server, port):
 #     print
 
 def start_tcpprobe():
-    os.system("rmmod tcp_probe &>/dev/null; modprobe tcp_probe;")
+    os.system("rmmod tcp_probe > /dev/null; modprobe tcp_probe full=1;")
     Popen("cat /proc/net/tcpprobe > %s/tcp_probe.txt" % args.dir, shell=True)
 
 def stop_tcpprobe():
-    os.system("killall -9 cat; rmmod tcp_probe &>/dev/null;")
+    os.system("killall -9 cat; rmmod tcp_probe > /dev/null;")
 
 def get_ip_configs(net):
     server = net.getNodeByName('server')
