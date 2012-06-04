@@ -8,16 +8,32 @@ Introduction
     Second, we will attempt to evaluate the potential negative impact of larger init_cwnd.  The Dukkipati et.al. paper[1] discusses the potential for larger initial congestion windows to cause more frequent packet loss due to buffers overflowing.  Unfortunately, the authors of that paper only attempted to measure this effect using a small amount of data.  We attempt to quantify this effect in MiniNet by opening many TCP connections over a bottleneck link and evaluating the goodput of this network for various init_cwnd sizes.
     
 Experimental Setup
-For all of our experiments we use the general topology shown below implemented in mininet. The only link with realistic parameters is the bottleneck link between the two switches in the center. The links connecting hosts to the two center switches are modeled with infinite bandwidth and zero latency. Each host on the left communicates with exactly one server on the right. The clients on the left run a curl command to download a 30 kB (30 thousand byte) file from their respective servers. We measure the latency as reported by curl.
+
+For all of our experiments we use the general topology shown below implemented in mininet. The only link with realistic parameters is the bottleneck link between the two routers (labeled r1 and r2) in the center of the diagram. The links connecting hosts to their router are modeled with infinite bandwidth and zero latency. In addition, we use a simple identity traffic matrix in our experiments. Thus, each client on the left communicates with exactly one server on the right. Client 1 requests from server 1, client 2 from server 2, and so on. The clients on the left run a curl command to download a 30 kB (30 thousand byte) file from their respective servers. We measure the latency as reported by curl as our dependent variable.
 
 \image{topology.png}
 
-To replicate the main results of [1], we use only one client/server pair and set the delay of the bottleneck link to various values to change the end-to-end RTT, our independent variable. For each RTT we compare the latency of transferring the 30 kB file for the two initial congestion window sizes (4, the default and 10, the proposed new value).
+To replicate the main results of [1], we use only one client/server pair (N = 1) and set the delay of the bottleneck link to various values to change the end-to-end RTT, our independent variable. For each RTT we compare the latency of transferring the 30 kB file for the two initial congestion window sizes (3, the default, and 10, the proposed new value).
 
 For our second experiment, we simply set the loss rate of the link to 5% and otherwise perform the same experiment as in the first part.
-[Describe the use of MiniNet]
+
+In the third and final experiment, we TODO
+
+For these experiments to work, we must use the ip command to change the initial congestion window on the mininet hosts. The command to change the initial congestion window is "ip route change default via <gateway> dev eth0 initcwnd <iw>
+". It is important to note that linux kernel versions 2.6.39 through 3.2 have a bug that makes this command not work. Thus, for our experiments we used linux kernel version 3.3 compiled for Amazon AWS in a Ubuntu 12.04 LTS distribution. We ran then ran all of our experiments on Amazon's EC2 service with this setup.
 
 Evaluation on Uncongested Links
+
+In our first experiment, we were able to reproduce fairly closely the results that were obtained in the original paper.
+
+\image{fig5_original.png} \image{fig5_repro.png}
+
+<Comment on differences between orig and repro>
+
+In our second experiment, we observed that TODO
+
+In our third experiment, 
+
 [A comparison to the original paper's data]
 
 Evaluation on Congested Links
@@ -27,4 +43,13 @@ Conclusions
 [Our conclusions]
 
 References
-[Cite the original paper, and anything else we use]
+Nandita Dukkipati et al.,
+\emph{An Argument for Increasing TCP’s Initial Congestion Window}
+ACM SIGCOMM, July 2010
+
+Nandita Dukkipati et al.,
+\emph{Increasing TCP initial window}
+78th IETF, Maastricht
+Slides at: http://www.ietf.org/proceedings/78/slides/iccrg-3.pdf
+
+The source code for this project can be found at: TODO
