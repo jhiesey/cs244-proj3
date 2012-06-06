@@ -171,7 +171,7 @@ if args.baseline_cwnd and args.show_pct:
     ax2 = ax1.twinx()
     ax2.set_ylabel("Percentage Improvement",color="b")
     ax2.set_yscale("linear")
-    ax2.set_ylim(0, 1)
+    ax2.set_ylim(0, 0.5)
 
 data = generate_data_dict()
 
