@@ -132,7 +132,7 @@ def plot_improvement(data, ax_abs, ax_percent):
         legendLabels = list()
         per_bar_width = width * 2 / num_cwnds
         i = 0
-        for key in abs_vals:
+        for key in sorted(abs_vals.keys()):
             rects1 = ax_abs.bar(ind+(i+num_cwnds/2)*per_bar_width,
                                 abs_vals[key], per_bar_width,
                                 color=cm.jet(1.*i/num_cwnds))
@@ -163,7 +163,7 @@ ax1.set_axisbelow(True)
 if args.baseline_cwnd:
     ax1.set_ylim(1, 10000)
 else:
-    ax1.set_ylim(100, 5000)
+    ax1.set_ylim(50, 5000)
 
 #http://matplotlib.sourceforge.net/examples/api/two_scales.html#api-two-scales
 ax2 = None    
