@@ -16,6 +16,7 @@ parser.add_argument('-b', '--baseline', dest='baseline_cwnd',
 parser.add_argument('-f', dest="path", required=True)
 parser.add_argument('-p', dest="show_pct", action='store_const', const=True, default=False)
 parser.add_argument('-o', '--out', dest="out", default=None)
+parser.add_argument('--ylim', type=int, default=None)
 
 args = parser.parse_args()
 
@@ -156,10 +157,16 @@ ax1.set_xlabel("RTT (msec)")
 if args.baseline_cwnd:
     ax1.set_ylabel("Improvement (ms)", color="r")
     ax1.set_yscale("log")
-    ax1.set_ylim(1, 10000)
+    if args.ylim is not None:
+        ax1.set_ylim(1, args.ylim)
+    else:
+        ax1.set_ylim(1, 10000)
 else:
     ax1.set_ylabel("Absolute Latency (ms)", color="r")
-    ax1.set_ylim(0, 1400)
+    if args.ylim is not None:
+        ax1.set_ylim(0, args.ylim)
+    else:
+        ax1.set_ylim(0, 2500)
 
 ax1.grid(True, which='major', linestyle='-')
 ax1.set_axisbelow(True)
