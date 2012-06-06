@@ -51,4 +51,4 @@ for j in range(args.numtests):
         if waitTime > 0:
             time.sleep(waitTime)
     else:
-        subprocess.call(command)
+        subprocess.call(command, shell=True)
