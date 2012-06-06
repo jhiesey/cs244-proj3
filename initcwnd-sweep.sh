@@ -36,9 +36,6 @@ bw=0.5
 
 mkdir $rootdir
 
-rtt_files_baseline=
-rtt_files=
-
 for rtt in 20 50 100 200; do # 500 1000 3000; do
     # dir=$rootdir/rtt$rtt
     # dir_baseline=$rootdir/rtt$rtt-baseline
@@ -60,7 +57,7 @@ for rtt in 20 50 100 200; do # 500 1000 3000; do
 done
 
 # Create RTT plot
-python plot_results.py -e rtt -o result.png -b $rtt_files_baseline -f $rtt_files
+python plot_results2.py -o result.png -b 3 -f $rootdir/
 
 echo "Started at" $start
 echo "Ended at" `date`
