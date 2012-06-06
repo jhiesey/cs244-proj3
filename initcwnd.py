@@ -234,7 +234,7 @@ def run_initcwnd_expt(net, cwnd):
     for i in range(1, args.hosts + 1):
         client = net.getNodeByName('client' + str(i))
         client = net.getNodeByName('client' + str(i))
-        latencyFile = "latency-%d.txt" % i
+        latencyFile = "host-%d-cwnd-%d-rtt-%d.txt" % (i, args.cwnd, args.rtt)
 
         # # Have client print parameters into output
         # client.cmd("echo \"cwnd: %d\" >> %s/%s" % (args.cwnd, args.dir, latencyFile))
@@ -243,9 +243,9 @@ def run_initcwnd_expt(net, cwnd):
         # client.cmd("echo \"bdp: %d\" >> %s/%s" % (args.bw * args.rtt, args.dir, latencyFile))
         
         if args.lambd is not None:
-            client.sendCmd('python client-operation.py --dir %s --server %s --hnum %d --lambda %f --numtests %d' % (args.dir, server.IP(), i, args.lambd, args.numtests))
+            client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --lambda %f --numtests %d' % (args.dir, latencyFile, server.IP(), i, args.lambd, args.numtests))
         else:
-            client.sendCmd('python client-operation.py --dir %s --server %s --hnum %d --numtests %d' % (args.dir, server.IP(), i, args.numtests))
+            client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --numtests %d' % (args.dir, latencyFile, server.IP(), i, args.numtests))
         clients.append(client)
         
         # thread = threading.Thread(target=doClient)
@@ -256,16 +256,16 @@ def run_initcwnd_expt(net, cwnd):
     for client in clients:
         print(client.waitOutput())
 
-    latencyFile = "latency.txt"     
+    latencyFile = "cwnd-%d-rtt-%d.txt" % (args.cwnd, args.rtt)
     # Have client print parameters into output
-    subprocess.call("echo \"cwnd: %d\" >> %s/latency.txt" % (args.cwnd, args.dir), shell=True)
-    subprocess.call("echo \"rtt: %d\" >> %s/latency.txt" % (args.rtt, args.dir), shell=True)
-    subprocess.call("echo \"bandwidth: %d\" >> %s/latency.txt" % (args.bw, args.dir), shell=True)
-    subprocess.call("echo \"bdp: %d\" >> %s/latency.txt" % (args.bw * args.rtt, args.dir), shell=True)
+    subprocess.call("echo \"cwnd: %d\" >> %s/%s" % (args.cwnd, args.dir, latencyFile), shell=True)
+    subprocess.call("echo \"rtt: %d\" >> %s/%s" % (args.rtt, args.dir, latencyFile), shell=True)
+    subprocess.call("echo \"bandwidth: %d\" >> %s/%s" % (args.bw, args.dir, latencyFile), shell=True)
+    subprocess.call("echo \"bdp: %d\" >> %s/%s" % (args.bw * args.rtt, args.dir, latencyFile), shell=True)
         
     # Combine results
     # command = "cat " + " ".join([('%s/latency-%d.txt' % (args.dir, i)) for i in range(1, args.hosts+1)]) + " >> %slatency.txt" % args.dir
-    subprocess.call("cat %s/latency-*.txt >> %s/latency.txt" % (args.dir, args.dir), shell=True)
+    subprocess.call("cat %s/host-*-%s >> %s/%s" % (args.dir, latencyFile, args.dir, latencyFile), shell=True)
         
     # command = 'echoping -n 10 -h /testfiles/test%s %s:%d > %s/echoping.txt' % (size, server.IP(), port, args.dir)
     # print(command)
