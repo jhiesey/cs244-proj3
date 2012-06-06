@@ -14,7 +14,7 @@ parser.add_argument('-b', '--baseline', dest='baseline_cwnd',
                     help="Specify the cwnd size that should be\
  considered the baseline") 
 parser.add_argument('-f', dest="path", required=True)
-parser.add_argument('-p', dest="show_pct", type=bool, default=False)
+parser.add_argument('-p', dest="show_pct", action='store_const', const=True, default=False)
 parser.add_argument('-o', '--out', dest="out", default=None)
 
 args = parser.parse_args()
