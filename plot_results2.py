@@ -155,15 +155,14 @@ ax1 = fig.add_subplot(1, 1, 1)
 ax1.set_xlabel("RTT (msec)")
 if args.baseline_cwnd:
     ax1.set_ylabel("Improvement (ms)", color="r")
-else:
-    ax1.set_ylabel("Absolute Latency (ms)", color="r")
-ax1.set_yscale("log")
-ax1.grid(True, which='major', linestyle='-')
-ax1.set_axisbelow(True)
-if args.baseline_cwnd:
+    ax1.set_yscale("log")
     ax1.set_ylim(1, 10000)
 else:
-    ax1.set_ylim(50, 5000)
+    ax1.set_ylabel("Absolute Latency (ms)", color="r")
+    ax1.set_ylim(0, 1400)
+
+ax1.grid(True, which='major', linestyle='-')
+ax1.set_axisbelow(True)
 
 #http://matplotlib.sourceforge.net/examples/api/two_scales.html#api-two-scales
 ax2 = None    
