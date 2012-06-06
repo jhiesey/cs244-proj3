@@ -17,7 +17,7 @@ trap ctrlc SIGINT
 start=`date`
 exptid=`date +%b%d-%H:%M`
 rootdir=latency-$exptid
-bw=0.5
+bw=100
 
 mkdir $rootdir
 
