@@ -80,11 +80,11 @@ parser.add_argument('--lambda', '-l',
                     help="Poisson parameter",
                     default=None)
 
-# parser.add_argument('--delay', '-d',
-#                     dest="delay",
-#                     type=float,
-#                     help="Latency on the link in ms",
-#                     default=100)
+parser.add_argument('--loss',
+                    dest='loss',
+                    type=float,
+                    help="Link loss",
+                    default=0)
 
 # Expt parameters
 args = parser.parse_args()
@@ -115,7 +115,7 @@ class InitCwndTopo(Topo):
         # Host and link configuration
         hconfig = {'cpu': cpu}
         lconfig = {'bw': bw, 'delay': ('%sms' % delay),
-                   'max_queue_size': max_queue_size} # , 'loss': 10
+                   'max_queue_size': max_queue_size, 'loss': args.loss}
                    
         serverSwitch = self.add_switch('s1')
         clientSwitch = self.add_switch('s2')
@@ -208,50 +208,19 @@ def run_initcwnd_expt(net, cwnd):
         print('server: %s' % server.waitOutput())
         
     sleep(1)
-    # waitListening(sender1, recvr, port)
-    
-    # def doClient():
-    #     # Get receiver and clients
-    #     server = net.getNodeByName('server' + str(1))
-    #     client = net.getNodeByName('client' + str(1))
-    # 
-    # 
-    # 
-    #     size = 30
-    #     command = "curl -o TEST.OUT -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s/%s" % (server.IP(), port, size, args.dir, latencyFile)
-    #     for j in range(args.numtests):
-    #         print(command)
-    #         if args.lambd is not None:
-    #             stopTime = time.time() + random.expovariate(args.lambd)
-    #             client.cmd(command)
-    #             waitTime = stopTime - time.time()
-    #             if waitTime > 0:
-    #                 sleep(waitTime)
-    #         else:
-    #             client.cmd(command)                
+    # waitListening(sender1, recvr, port)            
     
     clients = []    
     for i in range(1, args.hosts + 1):
         client = net.getNodeByName('client' + str(i))
         client = net.getNodeByName('client' + str(i))
         latencyFile = "host-%d-cwnd-%d-rtt-%d.txt" % (i, args.cwnd, args.rtt)
-
-        # # Have client print parameters into output
-        # client.cmd("echo \"cwnd: %d\" >> %s/%s" % (args.cwnd, args.dir, latencyFile))
-        # client.cmd("echo \"rtt: %d\" >> %s/%s" % (args.rtt, args.dir, latencyFile))
-        # client.cmd("echo \"bandwidth: %d\" >> %s/%s" % (args.bw, args.dir, latencyFile))
-        # client.cmd("echo \"bdp: %d\" >> %s/%s" % (args.bw * args.rtt, args.dir, latencyFile))
         
         if args.lambd is not None:
             client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --lambda %f --numtests %d' % (args.dir, latencyFile, server.IP(), i, args.lambd, args.numtests))
         else:
             client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --numtests %d' % (args.dir, latencyFile, server.IP(), i, args.numtests))
         clients.append(client)
-        
-        # thread = threading.Thread(target=doClient)
-        # thread.daemon =  True
-        # clientThreads.append(thread)
-        # thread.start()
 
     for client in clients:
         print(client.waitOutput())
@@ -264,29 +233,7 @@ def run_initcwnd_expt(net, cwnd):
     subprocess.call("echo \"bdp: %d\" >> %s/%s" % (args.bw * args.rtt, args.dir, latencyFile), shell=True)
         
     # Combine results
-    # command = "cat " + " ".join([('%s/latency-%d.txt' % (args.dir, i)) for i in range(1, args.hosts+1)]) + " >> %slatency.txt" % args.dir
     subprocess.call("cat %s/host-*-%s >> %s/%s" % (args.dir, latencyFile, args.dir, latencyFile), shell=True)
-        
-    # command = 'echoping -n 10 -h /testfiles/test%s %s:%d > %s/echoping.txt' % (size, server.IP(), port, args.dir)
-    # print(command)
-    # client.cmd(command)
-    
-    # client.sendCmd('ifconfig')
-    # print('client: %s' % client.waitOutput())
-
-    # Hint: Use sendCmd() and waitOutput() to start iperf and wait for them to finish
-    # iperf command to start flow: 'iperf -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name)
-    # Hint (not important): You may use progress(t) to track your experiment progress
-    # for i in range(1,n+1):
-    #     node_name = 'h%d' % i
-    #     hi = net.getNodeByName(node_name)
-    #     hi.sendCmd('iperf -Z reno -c %s -p %s -t %d -i 1 -yc > %s/iperf_%s.txt' % (recvr.IP(), 5001, seconds, args.dir, node_name))
-    # 
-    # for i in range(1,n+1):
-    #     hi = net.getNodeByName('h%d' % i)
-    #     hi.waitOutput()
-    # 
-    # recvr.cmd('kill %iperf')
 
     # Shut down monitors
     monitor.terminate()
