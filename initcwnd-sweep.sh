@@ -75,59 +75,59 @@ done
 # Create RTT plot
 python plot_results2.py -o $rootdir/result.png -b 3 -p true -f $rootdir/
 
-# # MORE CWNDS
-# rootdir=latency-$exptid-multicwnd
-# mkdir $rootdir
-# bw=100
-# 
-# for rtt in 20 50 100 200 500 1000 3000; do
-# 	for cwnd in 3 6 10 16 26 42; do
-# 		python initcwnd.py --bw $bw \
-# 		    --cwnd $cwnd \
-# 		    --rtt $rtt \
-# 		    --dir $rootdir \
-# 		    --hosts 1 --maxsize 100000
-# 	done
-# done
-# 
-# # Create RTT plot
-# python plot_results2.py -o $rootdir/result.png -f $rootdir/
-# 
-# # LOSSY LINK
-# rootdir=latency-$exptid-lossy
-# mkdir $rootdir
-# bw=100
-# 
-# for rtt in 20 50 100 200 500 1000 3000; do
-# 	for cwnd in 3 6 10 16 26 42; do
-# 		python initcwnd.py --bw $bw \
-# 		    --cwnd $cwnd \
-# 		    --rtt $rtt \
-# 		    --dir $rootdir \
-# 		    --hosts 1 --maxsize 100000 --loss 10 --numtests 3
-# 	done
-# done
-# 
-# # Create RTT plot
-# python plot_results2.py -o $rootdir/result.png -f $rootdir/
-# 
-# # SATURATED LINK
-# rootdir=latency-$exptid-saturated
-# mkdir $rootdir
-# bw=1
-# 
-# for rtt in 20 50 100 200 500 1000 3000; do
-# 	for cwnd in 3 6 10 16 26 42; do
-# 		python initcwnd.py --bw $bw \
-# 		    --cwnd $cwnd \
-# 		    --rtt $rtt \
-# 		    --dir $rootdir \
-# 		    --hosts 1 --maxsize 100000 --hosts 10 --lambda 1
-# 	done
-# done
-# 
-# # Create RTT plot
-# python plot_results2.py -o $rootdir/result.png -f $rootdir/
+# MORE CWNDS
+rootdir=latency-$exptid-multicwnd
+mkdir $rootdir
+bw=100
+
+for rtt in 20 50 100 200 500 1000 3000; do
+	for cwnd in 3 6 10 16 26 42; do
+		python initcwnd.py --bw $bw \
+		    --cwnd $cwnd \
+		    --rtt $rtt \
+		    --dir $rootdir \
+		    --hosts 1 --maxsize 100000
+	done
+done
+
+# Create RTT plot
+python plot_results2.py -o $rootdir/result.png -f $rootdir/
+
+# LOSSY LINK
+rootdir=latency-$exptid-lossy
+mkdir $rootdir
+bw=100
+
+for rtt in 20 50 100 200 500 1000 3000; do
+	for cwnd in 3 6 10 16 26 42; do
+		python initcwnd.py --bw $bw \
+		    --cwnd $cwnd \
+		    --rtt $rtt \
+		    --dir $rootdir \
+		    --hosts 1 --maxsize 100000 --loss 5 --numtests 3
+	done
+done
+
+# Create RTT plot
+python plot_results2.py -o $rootdir/result.png -f $rootdir/
+
+# SATURATED LINK
+rootdir=latency-$exptid-saturated
+mkdir $rootdir
+bw=1
+
+for rtt in 20 50 100 200 500 1000 3000; do
+	for cwnd in 3 6 10 16 26 42; do
+		python initcwnd.py --bw $bw \
+		    --cwnd $cwnd \
+		    --rtt $rtt \
+		    --dir $rootdir \
+		    --hosts 1 --maxsize 100000 --hosts 10 --lambda 1
+	done
+done
+
+# Create RTT plot
+python plot_results2.py -o $rootdir/result.png -f $rootdir/
 
 
 echo "Started at" $start

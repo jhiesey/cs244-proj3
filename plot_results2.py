@@ -122,11 +122,11 @@ def plot_improvement(data, ax_abs, ax_percent):
             rects2 = ax_percent.bar(ind+2*width, percent_list, width, color='b')
             ax_abs.legend( (rects1[0], rects2[0]),
                            ('Absolute Improvement','Percentage Improvement'),
-                           loc=9)
+                           loc=2)
         else:
             ax_abs.legend( [rects1[0]],
                            ['Absolute Improvement'],
-                           loc=9)
+                           loc=2)
     else:
         rectZeros = list()
         legendLabels = list()
@@ -140,7 +140,7 @@ def plot_improvement(data, ax_abs, ax_percent):
             legendLabels.append('Total Latency for cwnd %d' % key)
             i = i + 1
 
-        l = ax_abs.legend( tuple(rectZeros), tuple(legendLabels), loc=9 )
+        l = ax_abs.legend( tuple(rectZeros), tuple(legendLabels), loc=2 )
         #l.set_zorder(0)
 
     ax_abs.set_xticks(ind+2*width)

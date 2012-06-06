@@ -53,7 +53,7 @@ for size in [300, 475, 754, 1194, 1893, 3000, 4755, 7536, 11943, 18929, 30000, 4
         continue
     if size > args.maxsize:
         break
-    
+
     command = "curl -o /dev/null -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s" % (args.server, port, size, args.filename)
     for j in range(args.numtests):
         print(command)
