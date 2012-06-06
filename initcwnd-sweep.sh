@@ -29,30 +29,30 @@ cd -
 start=`date`
 exptid=`date +%b%d-%H:%M`
 rootdir=latency-$exptid
-bw=100
+bw=0.5
 
 mkdir $rootdir
 
 rtt_files_baseline=
 rtt_files=
 
-for rtt in 20 50 100 200 500 1000 3000; do
+for rtt in 20 50 100 200; do # 500 1000 3000; do
     dir=$rootdir/rtt$rtt
     dir_baseline=$rootdir/rtt$rtt-baseline
-    rtt_files_baseline=$rtt_files_baseline\ $dir_baseline/latency-1.txt
-    rtt_files=$rtt_files\ $dir/latency-1.txt
+    rtt_files_baseline=$rtt_files_baseline\ $dir_baseline/latency.txt
+    rtt_files=$rtt_files\ $dir/latency.txt
     # Baseline
     python initcwnd.py --bw $bw \
         --cwnd 2 \
         --rtt $rtt \
         --dir $dir_baseline \
-        -t 60 --hosts 4 -l 1
+        -t 60 --hosts 10 # -l 1
     # Increased cwnd
     python initcwnd.py --bw $bw \
         --cwnd 10 \
         --rtt $rtt \
         --dir $dir \
-        -t 60 --hosts 4 -l 1
+        -t 60 --hosts 10 # -l 1
 
 done
 
