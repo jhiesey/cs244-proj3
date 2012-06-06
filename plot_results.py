@@ -78,7 +78,6 @@ def parse_file(f):
 
 def plot_improvement(ax_abs, ax_percent):
     width = 0.35
-    baseline = list()
     abs_list = list()
     percent_list = list()
     labels = list()
