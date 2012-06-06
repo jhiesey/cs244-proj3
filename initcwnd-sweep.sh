@@ -14,6 +14,18 @@ ctrlc() {
 
 trap ctrlc SIGINT
 
+# Hack to turn on the newer version of openvswitch
+cd ~/openvswitch
+insmod datapath/linux/openvswitch.ko
+ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+                     --remote=db:Open_vSwitch,manager_options \
+                     --pidfile --detach
+
+ovs-vsctl --no-wait init
+ovs-vswitchd --pidfile --detach
+cd -
+# End hack
+
 start=`date`
 exptid=`date +%b%d-%H:%M`
 rootdir=latency-$exptid
