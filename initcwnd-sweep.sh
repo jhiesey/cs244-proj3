@@ -91,7 +91,7 @@ for rtt in 20 50 100 200 500; do
 done
 
 # Create RTT plot
-python plot_results2.py -o $rootdir/result.png --ylim 4000 -f $rootdir/
+python plot_results2.py -o $rootdir/result.png --ylim 6500 -f $rootdir/
 echo "Output saved to $rootdir"
 
 echo "Started at" $start
