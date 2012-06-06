@@ -38,7 +38,7 @@ parser.add_argument('--numtests',
 args = parser.parse_args()
 
 port = 5001
-for size in [300, 475, 754, 1194, 1893, 3000, 4755, 7536, 11943, 18929, 30000, 47547, 75357, 119432, 189287, 3000000]:
+for size in [300, 475, 754, 1194, 1893, 3000, 4755, 7536, 11943, 18929, 30000, 47547, 75357]: #, 119432, 189287, 3000000]:
     command = "curl -o /dev/null -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s" % (args.server, port, size, args.filename)
     for j in range(args.numtests):
         print(command)

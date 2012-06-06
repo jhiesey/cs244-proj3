@@ -44,7 +44,7 @@ for rtt in 20 50 100 200; do # 500 1000 3000; do
 		    --cwnd $cwnd \
 		    --rtt $rtt \
 		    --dir $rootdir \
-		    -t 60 --hosts 1 # -l 1
+		    -t 60 --hosts 1 --loss 5 --numtests 3 # -l 1
 	done
 done
 
