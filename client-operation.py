@@ -7,8 +7,8 @@ import time
 
 parser = argparse.ArgumentParser(description="Congesiton window client")
 
-parser.add_argument('--dir',
-                    help="Directory to store outputs",
+parser.add_argument('--filename',
+                    help="Filename to store outputs",
                     default="results")
                     
 parser.add_argument('--server',
@@ -37,11 +37,9 @@ parser.add_argument('--numtests',
 
 args = parser.parse_args()
 
-latencyFile = "latency-%d.txt" % args.hostnum
-
 size = 30
 port = 5001
-command = "curl -o /dev/null -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s/%s" % (args.server, port, size, args.dir, latencyFile)
+command = "curl -o /dev/null -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s" % (args.server, port, size, args.filename)
 for j in range(args.numtests):
     print(command)
     if args.lambd is not None:
