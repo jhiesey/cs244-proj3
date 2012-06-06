@@ -42,11 +42,11 @@ parser.add_argument('--cli',
                     action='store_true',
                     help='Run CLI for topology debugging purposes')
 
-parser.add_argument('--time', '-t',
-                    dest="time",
-                    type=int,
-                    help="Duration of the experiment.",
-                    default=60)
+# parser.add_argument('--time', '-t',
+#                     dest="time",
+#                     type=int,
+#                     help="Duration of the experiment.",
+#                     default=60)
                     
 parser.add_argument('--cwnd', '-c',
                     dest="cwnd",
@@ -85,6 +85,16 @@ parser.add_argument('--loss',
                     type=float,
                     help="Link loss",
                     default=0)
+                    
+parser.add_argument('--minsize',
+                    type=int,
+                    help="Minimum file size for experiments",
+                    default=0)
+                    
+parser.add_argument('--maxsize',
+                    type=int,
+                    help="Maximum file size for experiments",
+                    default=1000000)
 
 # Expt parameters
 args = parser.parse_args()
@@ -168,7 +178,7 @@ def get_ip_configs(net):
 def run_initcwnd_expt(net, cwnd):
     "Run experiment"
 
-    seconds = args.time
+    # seconds = args.time
 
     # Start the bandwidth and cwnd monitors in the background
     monitor = Process(target=monitor_devs_ng, 
@@ -217,9 +227,9 @@ def run_initcwnd_expt(net, cwnd):
         latencyFile = "host-%d-cwnd-%d-rtt-%d.txt" % (i, args.cwnd, args.rtt)
         
         if args.lambd is not None:
-            client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --lambda %f --numtests %d' % (args.dir, latencyFile, server.IP(), i, args.lambd, args.numtests))
+            client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --lambda %f --numtests %d --minsize %d --maxsize %d' % (args.dir, latencyFile, server.IP(), i, args.lambd, args.numtests, args.minsize, args.maxsize))
         else:
-            client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --numtests %d' % (args.dir, latencyFile, server.IP(), i, args.numtests))
+            client.sendCmd('python client-operation.py --filename %s/%s --server %s --hnum %d --numtests %d --minsize %d --maxsize %d' % (args.dir, latencyFile, server.IP(), i, args.numtests, args.minsize, args.maxsize))
         clients.append(client)
 
     for client in clients:

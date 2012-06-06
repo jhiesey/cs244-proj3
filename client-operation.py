@@ -34,11 +34,26 @@ parser.add_argument('--numtests',
                     type=int,
                     help="Number of tests",
                     default=1)
+                    
+parser.add_argument('--minsize',
+                    type=int,
+                    help="Minimum file size for experiments",
+                    default=0)
+
+parser.add_argument('--maxsize',
+                    type=int,
+                    help="Maximum file size for experiments",
+                    default=1000000)
 
 args = parser.parse_args()
 
 port = 5001
 for size in [300, 475, 754, 1194, 1893, 3000, 4755, 7536, 11943, 18929, 30000, 47547, 75357, 119432, 189287, 3000000]:
+    if size < args.minsize:
+        continue
+    if size > args.maxsize:
+        break
+    
     command = "curl -o /dev/null -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s" % (args.server, port, size, args.filename)
     for j in range(args.numtests):
         print(command)
