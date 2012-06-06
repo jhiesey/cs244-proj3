@@ -66,7 +66,7 @@ parser.add_argument('--numtests',
                     dest='numtests',
                     type=int,
                     help="Number of tests",
-                    default=10)
+                    default=1)
  
 parser.add_argument('--hosts',
                     dest='hosts',

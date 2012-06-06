@@ -33,20 +33,20 @@ parser.add_argument('--numtests',
                     dest='numtests',
                     type=int,
                     help="Number of tests",
-                    default=10)
+                    default=1)
 
 args = parser.parse_args()
 
-size = 30
 port = 5001
-command = "curl -o /dev/null -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s" % (args.server, port, size, args.filename)
-for j in range(args.numtests):
-    print(command)
-    if args.lambd is not None:
-        stopTime = time.time() + random.expovariate(args.lambd)
-        subprocess.call(command, shell=True)
-        waitTime = stopTime - time.time()
-        if waitTime > 0:
-            time.sleep(waitTime)
-    else:
-        subprocess.call(command, shell=True)
+for size in [300, 475, 754, 1194, 1893, 3000, 4755, 7536, 11943, 18929, 30000, 47547, 75357, 119432, 189287, 3000000]:
+    command = "curl -o /dev/null -w '%%{time_total}\\n' %s:%d/testfiles/test%d >> %s" % (args.server, port, size, args.filename)
+    for j in range(args.numtests):
+        print(command)
+        if args.lambd is not None:
+            stopTime = time.time() + random.expovariate(args.lambd)
+            subprocess.call(command, shell=True)
+            waitTime = stopTime - time.time()
+            if waitTime > 0:
+                time.sleep(waitTime)
+        else:
+            subprocess.call(command, shell=True)
